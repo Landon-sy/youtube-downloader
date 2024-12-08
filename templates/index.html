@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YouTube 视频下载器</title>
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 标题样式 */
+        h1 {
+            color: #e62117;
+            text-align: center;
+            margin: 30px 0;
+            font-size: 2.5em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #333;
+            margin: 25px 0 15px 0;
+            font-size: 1.8em;
+        }
+
+        /* 下载表单样式 */
+        .download-form {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #url {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        #url:focus {
+            border-color: #e62117;
+            outline: none;
+        }
+
+        button {
+            background-color: #e62117;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #cc1e1e;
+        }
+
+        /* 状态显示区域样式 */
+        .download-status {
+            background: white;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            line-height: 1.6;
+        }
+
+        /* 视频列表样式 */
+        .video-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .video-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .video-item:hover {
+            transform: translateY(-3px);
+        }
+
+        .video-item p {
+            margin: 8px 0;
+            color: #666;
+        }
+
+        .video-item a {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .video-item a:hover {
+            background-color: #45a049;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .download-form {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .video-list {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 进度条容器样式 */
+        .progress-container {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        /* 进度条样式 */
+        .progress-bar {
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        /* 下载状态卡片样式 */
+        .download-status {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+
+        /* 下载信息样式 */
+        .progress-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .progress-info div {
+            text-align: center;
+            padding: 10px;
+            background: #f8f8f8;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* 下载状态标题 */
+        .status-title {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>YouTube 视频下载器</h1>
+    
+    <!-- 下载表单 -->
+    <div class="download-form">
+        <input type="text" id="url" placeholder="输入YouTube视频URL" required>
+        <button onclick="startDownload()">开始下载</button>
+    </div>
+
+    <!-- 状态显示区域 - 确保这个div存在 -->
+    <div id="status" class="download-status">
+        <!-- 这里会通过JavaScript动态插入内容 -->
+    </div>
+
+    <!-- 已下载视频列表 -->
+    <h2>已下载视频</h2>
+    <div class="video-list">
+        {% for video in videos %}
+        <div class="video-item">
+            <p>文件名: {{ video.filename }}</p>
+            <p>大小: {{ video.size }}</p>
+            <a href="{{ video.path }}" download>下载文件</a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+    function startDownload() {
+        const url = document.getElementById('url').value;
+        const statusDiv = document.getElementById('status');
+        
+        // 显示初始状态
+        statusDiv.innerHTML = `
+            <div class="status-title">正在下载...</div>
+            <div class="progress-container">
+                <div class="progress-bar" style="width: 0%"></div>
+            </div>
+            <div class="progress-info">
+                <div class="progress-percent">进度: 0%</div>
+                <div class="progress-speed">速度: --</div>
+                <div class="progress-eta">剩余: --</div>
+            </div>
+        `;
+        
+        // 发送下载请求
+        fetch('/download', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `url=${encodeURIComponent(url)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            const task_id = data.task_id;
+            // 定期检查下载状态
+            const checkStatus = setInterval(() => {
+                fetch(`/status/${task_id}`)
+                    .then(response => response.json())
+                    .then(status => {
+                        if (status.status === 'downloading') {
+                            // 提取进度百分比数字
+                            const progressMatch = status.progress ? status.progress.match(/(\d+(\.\d+)?)/) : null;
+                            const progressNum = progressMatch ? parseFloat(progressMatch[1]) : 0;
+                            
+                            // 更新进度条和信息
+                            statusDiv.innerHTML = `
+                                <div class="status-title">正在下载...</div>
+                                <div class="progress-container">
+                                    <div class="progress-bar" style="width: ${progressNum}%"></div>
+                                </div>
+                                <div class="progress-info">
+                                    <div class="progress-percent">进度: ${status.progress || '0%'}</div>
+                                    <div class="progress-speed">速度: ${status.speed || '--'}</div>
+                                    <div class="progress-eta">剩余: ${status.eta || '--'}</div>
+                                </div>
+                            `;
+                        } else if (status.status === 'finished') {
+                            statusDiv.innerHTML = `
+                                <div class="status-title">下载完成！</div>
+                                <div class="progress-container">
+                                    <div class="progress-bar" style="width: 100%"></div>
+                                </div>
+                                <div class="progress-info">
+                                    <div class="progress-percent">进度: 100%</div>
+                                    <div class="progress-speed">完成</div>
+                                    <div class="progress-eta">已完成</div>
+                                </div>
+                            `;
+                            clearInterval(checkStatus);
+                            setTimeout(() => location.reload(), 1500);
+                        }
+                    });
+            }, 1000);
+        })
+        .catch(error => {
+            statusDiv.innerHTML = `
+                <div class="status-title" style="color: #e62117;">下载出错</div>
+                <p style="margin-top: 10px; color: #666;">${error}</p>
+            `;
+            console.error('Download error:', error);
+        });
+        
+        return false;
+    }
+    </script>
+</body>
+</html> 
