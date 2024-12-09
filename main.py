@@ -7,16 +7,18 @@ import os
 from pathlib import Path
 import time
 import hashlib
+import json
 
 app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
 
+# 修改文件存储路径
+DOWNLOAD_DIR = Path("/tmp")  # Vercel 只允许写入 /tmp 目录
+DOWNLOAD_DIR.mkdir(exist_ok=True)
+
 # 存储下载任务状态
 download_tasks = {}
-# 下载目录
-DOWNLOAD_DIR = Path("downloads")
-DOWNLOAD_DIR.mkdir(exist_ok=True)
 
 # 生成唯一的任务ID
 def generate_task_id(url: str) -> str:
@@ -62,7 +64,7 @@ def progress_hook(d):
 # 下载视频函数
 def download_video(url: str, task_id: str):
     global current_task_id
-    current_task_id = task_id  # 设置当前任务ID
+    current_task_id = task_id
     
     ydl_opts = {
         'format': 'best',
@@ -74,6 +76,8 @@ def download_video(url: str, task_id: str):
         'keepvideo': True,
         'writethumbnail': False,
         'verbose': True,
+        # 添加文件大小限制
+        'max_filesize': 50 * 1024 * 1024  # 50MB 限制
     }
     
     try:
@@ -141,4 +145,20 @@ async def get_status(task_id: str):
     return status
 
 # 配置视频文件访问
-app.mount("/downloads", StaticFiles(directory="downloads"), name="downloads") 
+app.mount("/downloads", StaticFiles(directory="downloads"), name="downloads")
+
+# 添加健康检查端点
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
+# 在 FastAPI 应用启动时添加错误处理
+@app.exception_handler(500)
+async def internal_server_error(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={
+            "message": "Internal server error",
+            "detail": str(exc)
+        }
+    )
